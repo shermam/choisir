@@ -11,8 +11,9 @@ canvas.height = measures.height;
 /** @type{Map<number, {x: number, y:number}>} */
 const touches = new Map();
 
-const timer = 10; // seconds
+const timer = 5; // seconds
 let timeZero = performance.now();
+let selected = -1;
 const fingerSize = 50;
 
 /**
@@ -31,6 +32,8 @@ function handler(e) {
   }
   if (count != touches.size) {
     timeZero = performance.now();
+    const keys = [...touches.keys()];
+    selected = keys[Math.floor(Math.random() * touches.size)];
   }
 }
 
@@ -45,10 +48,19 @@ requestAnimationFrame(function draw(time) {
   ctx.fillStyle = "#000000";
   ctx.fillRect(0, 0, canvas.width, canvas.height);
 
+  // early exits if there are no fingers on the screen
+  if (touches.size == 0) return requestAnimationFrame(draw);
+
   // timer
   const elapsed = performance.now() - timeZero;
   const secs = Math.round(elapsed / 1000);
   const timeRemaining = timer - secs;
+
+  // Show selected
+  if (timeRemaining <= 0) {
+    drawSelected(time);
+    return requestAnimationFrame(draw);
+  }
 
   // Draw time remaining
   ctx.fillStyle = "#FFFF00";
@@ -73,6 +85,22 @@ const drawFingers = (time) => {
     ctx.fill();
     ctx.closePath();
   }
+};
+
+/**
+ *
+ * @param {number} time
+ */
+const drawSelected = (time) => {
+  const touch = touches.get(selected);
+  if (!touch) return;
+  ctx.beginPath();
+  ctx.fillStyle = "#cbdc2fff";
+  const step = mapTime(Math.sin(time / 250));
+  const size = fingerSize * step * 3;
+  ctx.ellipse(touch.x, touch.y, size, size, 0, 0, 2 * Math.PI);
+  ctx.fill();
+  ctx.closePath();
 };
 
 /**
